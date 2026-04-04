@@ -48,6 +48,37 @@ export default async function AgreementDetailPage({ params }: { params: { id: st
         </span>
       </div>
 
+      {/* Action buttons */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Link
+          href={`/agreements/${deal.id}/edit`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          Edit Deal
+        </Link>
+        <Link
+          href={`/desking?homePrice=${Number(financials.sale_price || financials.base_home_price || 0)}&downPayment=${Number(financials.down_payment || 0)}&rate=${Number(financials.interest_rate || 8.49)}&term=${Number(financials.term || 240)}&freight=${Number(financials.freight || 0)}&setup=${Number(financials.setup || 0)}`}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          Desk This Deal
+        </Link>
+        <Link
+          href={`/agreements/${deal.id}/project`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+          Project Tracker
+        </Link>
+      </div>
+
       {/* Buyer */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 mb-4">
         <h2 className="font-semibold text-slate-700 text-xs uppercase tracking-wide mb-3">Buyer</h2>
@@ -126,20 +157,51 @@ export default async function AgreementDetailPage({ params }: { params: { id: st
         </div>
       )}
 
+      {/* Revision Info */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 mb-4">
+        <h2 className="font-semibold text-slate-700 text-xs uppercase tracking-wide mb-2">Revision</h2>
+        <p className="text-sm text-slate-800">Version {deal.revision_number || 1}</p>
+      </div>
+
       {/* History */}
       {history.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-4">
           <div className="px-5 py-3 border-b border-slate-100">
-            <h2 className="font-semibold text-slate-900 text-sm">History</h2>
+            <h2 className="font-semibold text-slate-900 text-sm">Revision History</h2>
           </div>
           <div className="divide-y divide-slate-50">
             {history.map((h, i) => (
-              <div key={i} className="px-5 py-3">
+              <div key={i} className="px-5 py-3 flex items-center justify-between">
                 <p className="text-sm text-slate-700">{String(h.action || h.event || 'Update')}</p>
-                {h.date && <p className="text-xs text-slate-400 mt-0.5">{String(h.date)}</p>}
+                {h.date && (
+                  <p className="text-xs text-slate-400">
+                    {new Date(String(h.date)).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                )}
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Project Milestone Summary */}
+      {deal.project_id && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
+          <h2 className="font-semibold text-slate-700 text-xs uppercase tracking-wide mb-2">
+            Project Milestones
+          </h2>
+          <Link
+            href={`/projects/${deal.project_id}`}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            View Project Details &rarr;
+          </Link>
         </div>
       )}
     </div>

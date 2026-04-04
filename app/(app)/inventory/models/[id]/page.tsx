@@ -43,8 +43,18 @@ export default async function ModelDetailPage({ params }: { params: { id: string
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 mb-4">
-        <h1 className="text-xl font-bold text-slate-900 mb-1">{model.model_name}</h1>
-        <p className="text-slate-500 text-sm">{model.manufacturer} · {model.series}</p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 mb-1">{model.model_name}</h1>
+            <p className="text-slate-500 text-sm">{model.manufacturer} · {model.series}</p>
+          </div>
+          <Link
+            href={`/inventory/models/${params.id}/edit`}
+            className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors shrink-0"
+          >
+            Edit Model
+          </Link>
+        </div>
 
         <h2 className="font-semibold text-slate-700 text-xs uppercase tracking-wide mt-5 mb-3">Specifications</h2>
         <div className="grid grid-cols-2 gap-3">

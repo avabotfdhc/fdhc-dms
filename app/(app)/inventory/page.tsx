@@ -1,43 +1,63 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import InventoryStatusUpdate from '@/components/InventoryStatusUpdate'
+import ModelFilter from '@/components/ModelFilter'
 
-export default async function InventoryPage() {
+export default async function InventoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ model?: string }>
+}) {
+  const { model: modelFilter } = await searchParams
   const supabase = await createClient()
+
+  let inventoryQuery = supabase
+    .from('inventory')
+    .select('*, models(model_name, manufacturer, series, width, length, bedrooms, bathrooms)', { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  if (modelFilter) {
+    inventoryQuery = inventoryQuery.eq('model_id', modelFilter)
+  }
 
   const [
     { data: inventory, count: invCount },
     { data: models, count: modelCount },
   ] = await Promise.all([
-    supabase
-      .from('inventory')
-      .select('*, models(model_name, manufacturer, series, width, length, bedrooms, bathrooms)', { count: 'exact' })
-      .order('created_at', { ascending: false }),
+    inventoryQuery,
     supabase
       .from('models')
       .select('*', { count: 'exact' })
       .order('manufacturer', { ascending: true }),
   ])
 
-  const statusColors: Record<string, string> = {
-    available: 'bg-green-100 text-green-800',
-    sold: 'bg-slate-100 text-slate-600',
-    reserved: 'bg-yellow-100 text-yellow-800',
-    delivered: 'bg-blue-100 text-blue-800',
-  }
-
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Inventory & Models</h1>
-        <p className="text-slate-500 text-sm">{invCount} in inventory · {modelCount} models</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Inventory & Models</h1>
+          <p className="text-slate-500 text-sm">{invCount} in inventory · {modelCount} models</p>
+        </div>
+        <Link
+          href="/inventory/new"
+          className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+        >
+          + Add Unit
+        </Link>
       </div>
 
       {/* Inventory */}
       <div className="mb-6">
-        <h2 className="font-semibold text-slate-700 text-sm mb-3 uppercase tracking-wide">Current Inventory ({invCount})</h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-slate-700 text-sm uppercase tracking-wide">Current Inventory ({invCount})</h2>
+          <ModelFilter
+            models={(models || []).map(m => ({ id: m.id, manufacturer: m.manufacturer, model_name: m.model_name }))}
+            currentFilter={modelFilter || ''}
+          />
+        </div>
         {invCount === 0 ? (
           <div className="bg-white rounded-xl border border-slate-100 p-8 text-center text-slate-400 text-sm">
-            No inventory units on lot
+            No inventory units {modelFilter ? 'matching this model' : 'on lot'}
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-slate-100 divide-y divide-slate-50">
@@ -52,10 +72,11 @@ export default async function InventoryPage() {
                       {(unit.models as Record<string, unknown>)?.manufacturer} · VIN: {unit.vin || '—'}
                     </p>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusColors[unit.status] || 'bg-slate-100 text-slate-600'}`}>
-                      {unit.status}
-                    </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <InventoryStatusUpdate
+                      inventoryId={unit.id}
+                      currentStatus={unit.status}
+                    />
                     {unit.factory_direct_price && (
                       <span className="text-sm font-semibold text-slate-900">
                         ${Number(unit.factory_direct_price).toLocaleString()}
