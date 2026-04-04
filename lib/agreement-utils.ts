@@ -228,3 +228,222 @@ export function getRequiredDisclosures(
   if (!stateRequirements?.required_disclosures) return []
   return stateRequirements.required_disclosures
 }
+
+// ---------------------------------------------------------------------------
+// Legal document generation (ported from prior version)
+// ---------------------------------------------------------------------------
+
+export type DocumentType = 'master_agreement' | 'addendum_a' | 'hud_disclosure' | 'state_disclosure'
+
+/**
+ * Generate a populated legal document from a template.
+ *
+ * Fetches the appropriate template from `purchase_agreement_templates`,
+ * replaces all `{variable}` placeholders with agreement data, and returns
+ * the rendered document text.
+ */
+export async function generateLegalDocument(
+  supabase: SupabaseClient,
+  agreementId: string,
+  documentType: DocumentType,
+  stateCode?: string,
+): Promise<{ title: string; content: string }> {
+  // Fetch agreement
+  const { data: agreement } = await supabase
+    .from('purchase_agreements')
+    .select('*')
+    .eq('id', agreementId)
+    .single()
+
+  if (!agreement) throw new Error(`Agreement not found: ${agreementId}`)
+
+  // Fetch template
+  let templateQuery = supabase
+    .from('purchase_agreement_templates')
+    .select('*')
+    .eq('template_type', documentType)
+    .eq('is_default', true)
+
+  if (stateCode) {
+    templateQuery = templateQuery.eq('state_code', stateCode)
+  }
+
+  const { data: templates } = await templateQuery
+  const template = templates?.[0]
+
+  if (!template) {
+    // Fallback: fetch any default template of this type
+    const { data: fallback } = await supabase
+      .from('purchase_agreement_templates')
+      .select('*')
+      .eq('template_type', documentType)
+      .eq('is_default', true)
+      .is('state_code', null)
+      .limit(1)
+    if (!fallback?.[0]) throw new Error(`No template found for: ${documentType}`)
+    return generateFromTemplate(fallback[0], agreement, supabase)
+  }
+
+  return generateFromTemplate(template, agreement, supabase)
+}
+
+async function generateFromTemplate(
+  template: Record<string, unknown>,
+  agreement: Record<string, unknown>,
+  supabase: SupabaseClient,
+): Promise<{ title: string; content: string }> {
+  // Fetch state requirements for disclosures
+  let stateReq: Record<string, unknown> | null = null
+  if (agreement.client_state) {
+    const { data } = await supabase
+      .from('state_compliance_requirements')
+      .select('*')
+      .eq('state_code', agreement.client_state)
+      .single()
+    stateReq = data
+  }
+
+  // Fetch addendum A upgrades
+  const { data: upgrades } = await supabase
+    .from('addendum_a_upgrades')
+    .select('*')
+    .eq('agreement_id', agreement.id)
+    .order('item_number')
+
+  // Build upgrade table text
+  let upgradeTable = ''
+  let addendumTotal = 0
+  if (upgrades && upgrades.length > 0) {
+    upgradeTable = upgrades.map(u => {
+      const price = Number(u.retail_price || 0) + Number(u.installation_cost || 0)
+      addendumTotal += price
+      return `${u.item_number}  ${u.description}  $${price.toLocaleString()}`
+    }).join('\n')
+  }
+
+  const fmt = (v: unknown) => {
+    if (v === null || v === undefined) return ''
+    const n = Number(v)
+    if (!isNaN(n) && typeof v !== 'boolean') return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+    return String(v)
+  }
+
+  // Build variable map
+  const vars: Record<string, string> = {
+    agreement_number: String(agreement.agreement_number || ''),
+    agreement_date: agreement.agreement_date ? new Date(String(agreement.agreement_date)).toLocaleDateString() : '',
+    client_first_name: String(agreement.client_first_name || ''),
+    client_last_name: String(agreement.client_last_name || ''),
+    client_address: String(agreement.client_address || ''),
+    client_city: String(agreement.client_city || ''),
+    client_state: String(agreement.client_state || ''),
+    client_zip: String(agreement.client_zip || ''),
+    client_phone: String(agreement.client_phone || ''),
+    client_email: String(agreement.client_email || ''),
+    manufacturer: String(agreement.manufacturer || ''),
+    model_name: String(agreement.model_name || ''),
+    serial_number: String(agreement.serial_number || ''),
+    year: String(agreement.year || ''),
+    base_home_price: fmt(agreement.base_home_price),
+    factory_options_price: fmt(agreement.factory_options_price),
+    freight_cost: fmt(agreement.freight_cost),
+    setup_cost: fmt(agreement.setup_cost),
+    site_prep_price: fmt(agreement.site_prep_price),
+    sales_tax: fmt(agreement.sales_tax),
+    tax_rate: stateReq ? `${(Number(stateReq.sales_tax_rate) * 100).toFixed(2)}%` : '',
+    total_price: fmt(agreement.total_price),
+    trade_in_value: fmt(agreement.trade_in_value),
+    down_payment: fmt(agreement.down_payment),
+    deposit_amount: fmt(agreement.deposit_amount),
+    loan_amount: fmt(agreement.loan_amount),
+    monthly_payment: fmt(agreement.monthly_payment),
+    interest_rate: agreement.interest_rate ? `${agreement.interest_rate}` : '',
+    term_months: String(agreement.term_months || ''),
+    expected_delivery_date: agreement.expected_delivery_date ? new Date(String(agreement.expected_delivery_date)).toLocaleDateString() : '',
+    site_address: String(agreement.site_address || ''),
+    site_city: String(agreement.site_city || ''),
+    site_state: String(agreement.site_state || ''),
+    site_zip: String(agreement.site_zip || ''),
+    special_terms: String(agreement.special_terms || 'None'),
+    cooling_off_days: stateReq ? String(stateReq.cooling_off_period_days || 3) : '3',
+    hud_standards: stateReq ? String(stateReq.hud_installation_code || '24 CFR 3285') : '24 CFR 3285',
+    upgrade_table: upgradeTable || 'No optional upgrades selected.',
+    addendum_a_total: `$${addendumTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`,
+  }
+
+  const content = populateTemplate(String(template.body_content || ''), vars)
+  return {
+    title: String(template.name || 'Document'),
+    content,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Addendum A management (ported from prior version)
+// ---------------------------------------------------------------------------
+
+/**
+ * Add an upgrade to a purchase agreement's Addendum A.
+ * Auto-generates item number (A-001, A-002, etc.)
+ */
+export async function addUpgradeToAddendumA(
+  supabase: SupabaseClient,
+  agreementId: string,
+  upgrade: {
+    description: string
+    category: string
+    retailPrice: number
+    dealerCost?: number
+    installationCost?: number
+    installedBy?: string
+    manufacturer?: string
+    modelNumber?: string
+    warrantyPeriodMonths?: number
+    warrantyDescription?: string
+  },
+) {
+  // Get current count for item numbering
+  const { count } = await supabase
+    .from('addendum_a_upgrades')
+    .select('*', { count: 'exact', head: true })
+    .eq('agreement_id', agreementId)
+
+  const itemNumber = `A-${String((count || 0) + 1).padStart(3, '0')}`
+
+  const { data, error } = await supabase
+    .from('addendum_a_upgrades')
+    .insert({
+      agreement_id: agreementId,
+      item_number: itemNumber,
+      description: upgrade.description,
+      category: upgrade.category,
+      retail_price: upgrade.retailPrice,
+      dealer_cost: upgrade.dealerCost || 0,
+      installation_cost: upgrade.installationCost || 0,
+      installed_by: upgrade.installedBy || 'dealer',
+      manufacturer: upgrade.manufacturer || null,
+      model_number: upgrade.modelNumber || null,
+      warranty_period_months: upgrade.warrantyPeriodMonths || 12,
+      warranty_description: upgrade.warrantyDescription || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw new Error(`Failed to add upgrade: ${error.message}`)
+  return data
+}
+
+/**
+ * Remove an upgrade from Addendum A and recalculate totals.
+ */
+export async function removeUpgradeFromAddendumA(
+  supabase: SupabaseClient,
+  upgradeId: string,
+) {
+  const { error } = await supabase
+    .from('addendum_a_upgrades')
+    .delete()
+    .eq('id', upgradeId)
+
+  if (error) throw new Error(`Failed to remove upgrade: ${error.message}`)
+}
