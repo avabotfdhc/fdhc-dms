@@ -23,6 +23,15 @@ export default async function AgreementsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Deals</h1>
           <p className="text-slate-500 text-sm">{count} agreements</p>
         </div>
+        <Link
+          href="/agreements/new"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          New Deal
+        </Link>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 divide-y divide-slate-50">

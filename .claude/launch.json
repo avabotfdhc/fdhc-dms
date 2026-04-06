@@ -4,8 +4,9 @@
     {
       "name": "fdhc-dms",
       "runtimeExecutable": "/bin/sh",
-      "runtimeArgs": ["-c", "export PATH=/opt/homebrew/bin:$PATH && cd fdhc-dms && npm run dev"],
-      "port": 3000
+      "runtimeArgs": ["-c", "export PATH=/opt/homebrew/bin:$PATH && cd fdhc-dms && npm run dev -- -p $PORT"],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

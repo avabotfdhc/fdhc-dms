@@ -28,6 +28,12 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
+  // Public routes — no auth required
+  const publicPaths = ['/lead-form', '/api/webhooks/lead', '/api/webhooks/']
+  if (publicPaths.some(p => pathname.startsWith(p))) {
+    return supabaseResponse
+  }
+
   if (pathname.startsWith('/login') || pathname.startsWith('/auth')) {
     if (user && pathname === '/login') {
       return NextResponse.redirect(new URL('/dashboard', request.url))

@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
+import SettingsEditor from './SettingsEditor'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -22,7 +24,7 @@ export default async function SettingsPage() {
     .order('name')
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto">
+    <div className="p-4 md:p-6 max-w-3xl mx-auto pb-24 md:pb-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
         <p className="text-slate-500 text-sm">System configuration</p>
@@ -42,10 +44,16 @@ export default async function SettingsPage() {
         </div>
       </div>
 
+      {/* Editable dealership info & defaults */}
+      <SettingsEditor settingsId={settings?.id || null} settingsData={(settings?.data as Record<string, unknown>) || {}} />
+
       {/* Team */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-4">
-        <div className="px-5 py-3 border-b border-slate-100">
+        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
           <h2 className="font-semibold text-slate-900 text-sm">Team Members</h2>
+          <Link href="/settings/users" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            Manage
+          </Link>
         </div>
         <div className="divide-y divide-slate-50">
           {profiles?.map(p => (
@@ -73,15 +81,39 @@ export default async function SettingsPage() {
         </div>
       </div>
 
-      {/* System settings */}
-      {settings?.data && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
-          <h2 className="font-semibold text-slate-700 text-xs uppercase tracking-wide mb-3">System Settings</h2>
-          <pre className="text-xs text-slate-600 bg-slate-50 rounded-lg p-3 overflow-auto max-h-48">
-            {JSON.stringify(settings.data, null, 2)}
-          </pre>
-        </div>
-      )}
+      {/* Quick links */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+        <Link href="/settings/users" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+          <span className="text-2xl mb-1 block">👥</span>
+          <p className="text-sm font-medium text-slate-800">Users</p>
+          <p className="text-xs text-slate-500">Manage team</p>
+        </Link>
+        <Link href="/settings/automations" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+          <span className="text-2xl mb-1 block">⚡</span>
+          <p className="text-sm font-medium text-slate-800">Automations</p>
+          <p className="text-xs text-slate-500">Follow-up rules</p>
+        </Link>
+        <Link href="/settings/sequences" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+          <span className="text-2xl mb-1 block">📋</span>
+          <p className="text-sm font-medium text-slate-800">Sequences</p>
+          <p className="text-xs text-slate-500">Follow-up campaigns</p>
+        </Link>
+        <Link href="/settings/templates" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+          <span className="text-2xl mb-1 block">📝</span>
+          <p className="text-sm font-medium text-slate-800">Templates</p>
+          <p className="text-xs text-slate-500">Email & SMS templates</p>
+        </Link>
+        <Link href="/settings/audit" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+          <span className="text-2xl mb-1 block">📜</span>
+          <p className="text-sm font-medium text-slate-800">Audit Log</p>
+          <p className="text-xs text-slate-500">Activity history</p>
+        </Link>
+        <Link href="/settings/integrations" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+          <span className="text-2xl mb-1 block">🔗</span>
+          <p className="text-sm font-medium text-slate-800">Integrations</p>
+          <p className="text-xs text-slate-500">Lead intake & webhooks</p>
+        </Link>
+      </div>
     </div>
   )
 }

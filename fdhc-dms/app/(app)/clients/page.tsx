@@ -50,12 +50,26 @@ export default async function ClientsPage({
           <h1 className="text-2xl font-bold text-slate-900">Clients</h1>
           <p className="text-slate-500 text-sm">{count?.toLocaleString()} total</p>
         </div>
-        <Link
-          href="/clients/new"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          + New
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/clients/pipeline"
+            className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-600"
+          >
+            Pipeline
+          </Link>
+          <Link
+            href="/clients/import"
+            className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 text-slate-600"
+          >
+            Import CSV
+          </Link>
+          <Link
+            href="/clients/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            + New
+          </Link>
+        </div>
       </div>
 
       {/* Search & filter */}
