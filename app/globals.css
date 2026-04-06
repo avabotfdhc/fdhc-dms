@@ -1,23 +1,74 @@
 @import "tailwindcss";
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+/* ── Font ─────────────────────────────────────────────────── */
+:root {
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+body {
+  font-family: var(--font-inter);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
 
-/* Modal animations */
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+/* ── Animations ──────────────────────────────────────────── */
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(2rem); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(1.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-0.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(59,130,246,.4); }
+  70%  { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+  100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
 }
 
-/* Hide scrollbar for tabs */
+.animate-slide-up   { animation: slideUp   .25s cubic-bezier(.16,1,.3,1) both; }
+.animate-fade-in    { animation: fadeIn    .2s ease both; }
+.animate-fade-down  { animation: fadeInDown .2s ease both; }
+
+/* ── Utility ─────────────────────────────────────────────── */
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* ── Card polish ─────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border-radius: 0.875rem;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+  transition: box-shadow .15s ease;
+}
+.card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.07); }
+
+/* ── Sidebar gradient ────────────────────────────────────── */
+.sidebar-gradient {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+}
+
+/* ── Calendar day hover ──────────────────────────────────── */
+.cal-day {
+  transition: background .1s ease;
+}
+.cal-day:hover {
+  background: #f8fafc;
+}
+.cal-day.today {
+  background: #eff6ff;
+}
+.cal-day.selected {
+  background: #dbeafe;
+}
