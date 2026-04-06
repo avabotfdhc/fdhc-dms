@@ -108,6 +108,11 @@ export default async function SettingsPage() {
           <p className="text-sm font-medium text-slate-800">Audit Log</p>
           <p className="text-xs text-slate-500">Activity history</p>
         </Link>
+        <Link href="/settings/integrations" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+          <span className="text-2xl mb-1 block">🔗</span>
+          <p className="text-sm font-medium text-slate-800">Integrations</p>
+          <p className="text-xs text-slate-500">Lead intake & webhooks</p>
+        </Link>
       </div>
     </div>
   )
