@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { processActivityOutcome } from '@/lib/automation-engine'
+import Badge from '@/components/ui/Badge'
 
 interface FollowUpCompleteModalProps {
   followUpId: string
@@ -10,8 +11,17 @@ interface FollowUpCompleteModalProps {
   clientName: string
   activityType: string
   assignedTo: string
+  templateId?: string
   onClose: () => void
   onCompleted: () => void
+}
+
+interface TemplateData {
+  name: string
+  channel: string
+  subject: string | null
+  body_text: string | null
+  body_html: string | null
 }
 
 const OUTCOMES = [
@@ -30,6 +40,7 @@ export default function FollowUpCompleteModal({
   clientName,
   activityType,
   assignedTo,
+  templateId,
   onClose,
   onCompleted,
 }: FollowUpCompleteModalProps) {
@@ -37,9 +48,34 @@ export default function FollowUpCompleteModal({
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [template, setTemplate] = useState<TemplateData | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const selectClass =
     'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+
+  const loadTemplate = useCallback(async () => {
+    if (!templateId) return
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('message_templates')
+      .select('name, channel, subject, body_text, body_html')
+      .eq('id', templateId)
+      .single()
+    if (data) setTemplate(data)
+  }, [templateId])
+
+  useEffect(() => {
+    loadTemplate()
+  }, [loadTemplate])
+
+  async function handleCopyTemplate() {
+    if (template?.body_text) {
+      await navigator.clipboard.writeText(template.body_text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -109,6 +145,8 @@ export default function FollowUpCompleteModal({
     }
   }
 
+  const charCount = template?.body_text?.length || 0
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
       <div className="bg-white w-full sm:max-w-md sm:rounded-xl rounded-t-xl p-5 max-h-[90vh] overflow-y-auto">
@@ -146,6 +184,69 @@ export default function FollowUpCompleteModal({
               placeholder="Add outcome notes..."
             />
           </div>
+
+          {/* Template section */}
+          {template && (
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <div className="bg-slate-50 px-3 py-2 flex items-center justify-between border-b border-slate-200">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-700">{template.name}</span>
+                  <Badge
+                    text={template.channel.replace(/_/g, ' ')}
+                    variant={
+                      template.channel === 'email'
+                        ? 'info'
+                        : template.channel === 'sms'
+                        ? 'purple'
+                        : 'success'
+                    }
+                    size="sm"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyTemplate}
+                  className="text-xs text-blue-600 font-medium hover:text-blue-700"
+                >
+                  {copied ? 'Copied!' : 'Copy to Clipboard'}
+                </button>
+              </div>
+
+              <div className="px-3 py-2">
+                {/* Email: show subject + preview */}
+                {template.channel === 'email' && template.subject && (
+                  <p className="text-xs font-medium text-slate-600 mb-1">
+                    Subject: {template.subject}
+                  </p>
+                )}
+
+                {template.channel === 'email' && template.body_html ? (
+                  <div
+                    className="text-xs text-slate-600 leading-relaxed prose prose-xs max-w-none max-h-32 overflow-y-auto"
+                    dangerouslySetInnerHTML={{ __html: template.body_html }}
+                  />
+                ) : (
+                  <div className="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto">
+                    {template.body_text || 'No content'}
+                  </div>
+                )}
+
+                {/* SMS character count */}
+                {template.channel === 'sms' && (
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {charCount} chars · {charCount <= 160 ? '1 segment' : `${Math.ceil(charCount / 153)} segments`}
+                  </p>
+                )}
+
+                {/* Phone script indicator */}
+                {template.channel === 'phone_script' && (
+                  <p className="text-[10px] text-amber-600 mt-1 font-medium">
+                    {'\uD83D\uDCDE'} Talking points above
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 

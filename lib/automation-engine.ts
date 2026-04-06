@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { advanceSequence } from '@/lib/sequence-engine'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -137,4 +138,45 @@ export async function processActivityOutcome(
       )
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Follow-up completion handler (integrates rule engine + sequence engine)
+// ---------------------------------------------------------------------------
+
+/**
+ * Process a completed follow-up. If it belongs to a sequence enrollment,
+ * advance the sequence to the next step. Also runs single-rule processing
+ * via processActivityOutcome.
+ */
+export async function processFollowUpCompletion(
+  supabase: SupabaseClient,
+  followUpId: string,
+  outcome: string,
+): Promise<void> {
+  // Fetch the follow-up record
+  const { data: followUp, error: fetchError } = await supabase
+    .from('scheduled_follow_ups')
+    .select('client_id, assigned_to, activity_type, sequence_enrollment_id')
+    .eq('id', followUpId)
+    .single()
+
+  if (fetchError || !followUp) {
+    throw new Error(
+      `Failed to fetch follow-up: ${fetchError?.message ?? 'not found'}`,
+    )
+  }
+
+  // If this follow-up is part of a sequence, advance to next step
+  if (followUp.sequence_enrollment_id) {
+    await advanceSequence(supabase, followUp.sequence_enrollment_id, outcome)
+  }
+
+  // Run single-rule processing regardless
+  await processActivityOutcome(supabase, {
+    clientId: followUp.client_id,
+    activityType: followUp.activity_type,
+    outcome,
+    assignedTo: followUp.assigned_to ?? '',
+  })
 }

@@ -2,6 +2,7 @@
 
 import QuickActions from '@/components/QuickActions'
 import ActivityTimeline from '@/components/ActivityTimeline'
+import ClientSequenceEnrollments from '@/components/ClientSequenceEnrollments'
 import { useState } from 'react'
 
 interface Props {
@@ -25,6 +26,9 @@ export default function ClientDetailClient({ clientId, phone, email }: Props) {
           onActivityAdded={() => setRefreshKey(k => k + 1)}
         />
       </div>
+
+      {/* Active Sequences */}
+      <ClientSequenceEnrollments clientId={clientId} />
 
       {/* Activity Timeline */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5">

@@ -82,7 +82,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         <Link href="/settings/users" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
           <span className="text-2xl mb-1 block">👥</span>
           <p className="text-sm font-medium text-slate-800">Users</p>
@@ -93,8 +93,18 @@ export default async function SettingsPage() {
           <p className="text-sm font-medium text-slate-800">Automations</p>
           <p className="text-xs text-slate-500">Follow-up rules</p>
         </Link>
-        <Link href="/settings/audit" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+        <Link href="/settings/sequences" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
           <span className="text-2xl mb-1 block">📋</span>
+          <p className="text-sm font-medium text-slate-800">Sequences</p>
+          <p className="text-xs text-slate-500">Follow-up campaigns</p>
+        </Link>
+        <Link href="/settings/templates" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+          <span className="text-2xl mb-1 block">📝</span>
+          <p className="text-sm font-medium text-slate-800">Templates</p>
+          <p className="text-xs text-slate-500">Email & SMS templates</p>
+        </Link>
+        <Link href="/settings/audit" className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 hover:border-blue-200 hover:shadow-md transition-all text-center">
+          <span className="text-2xl mb-1 block">📜</span>
           <p className="text-sm font-medium text-slate-800">Audit Log</p>
           <p className="text-xs text-slate-500">Activity history</p>
         </Link>
