@@ -28,10 +28,18 @@ const navSections = [
   {
     label: 'Operations',
     items: [
-      { href: '/accounting', label: 'Accounting', emoji: '💰' },
-      { href: '/partners',   label: 'Partners',   emoji: '🤝' },
-      { href: '/service',    label: 'Service',    emoji: '🔧' },
-      { href: '/settings',   label: 'Settings',   emoji: '⚙️' },
+      { href: '/orders',      label: 'Orders',     emoji: '🏭' },
+      { href: '/accounting',  label: 'Accounting', emoji: '💰' },
+      { href: '/partners',    label: 'Partners',   emoji: '🤝' },
+      { href: '/service',     label: 'Service',    emoji: '🔧' },
+    ],
+  },
+  {
+    label: 'Insights',
+    items: [
+      { href: '/reports',        label: 'Reports',      emoji: '📉' },
+      { href: '/communications', label: 'Comms Hub',    emoji: '💬' },
+      { href: '/settings',       label: 'Settings',     emoji: '⚙️' },
     ],
   },
 ]
@@ -48,6 +56,9 @@ const mobileMoreItems = [
   { href: '/inventory',        label: 'Inventory',  emoji: '🏠' },
   { href: '/agreements',       label: 'Deals',      emoji: '📋' },
   { href: '/desking',          label: 'Desking',    emoji: '🧮' },
+  { href: '/orders',           label: 'Orders',     emoji: '🏭' },
+  { href: '/reports',          label: 'Reports',    emoji: '📉' },
+  { href: '/communications',   label: 'Comms Hub',  emoji: '💬' },
   { href: '/accounting',       label: 'Accounting', emoji: '💰' },
   { href: '/partners',         label: 'Partners',   emoji: '🤝' },
   { href: '/service',          label: 'Service',    emoji: '🔧' },

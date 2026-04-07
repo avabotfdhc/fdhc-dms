@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ClientDetailClient from './ClientDetailClient'
+import { scoreLeadClient } from '@/lib/lead-score'
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
@@ -25,6 +26,26 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       repName = rep.name || rep.username || null
     }
   }
+
+  // Fetch deals and follow-ups for richer lead scoring
+  const [{ data: deals }, { data: followUps }] = await Promise.all([
+    supabase.from('agreements').select('id').eq('client_id', client.id).in('status', ['pending', 'approved', 'active']),
+    supabase.from('scheduled_follow_ups').select('id, outcome').eq('client_id', client.id),
+  ])
+
+  const score = scoreLeadClient({
+    status: client.status || '',
+    land_status: client.land_status,
+    source: client.source,
+    contact_attempts: client.contact_attempts || 0,
+    interactions: (followUps || []).map(f => ({ outcome: f.outcome })),
+    created_at: client.created_at,
+    email: client.email,
+    phone: client.phone,
+    has_deal: (deals || []).length > 0,
+    next_follow_up_at: client.next_follow_up_at,
+    tags: client.tags,
+  })
 
   const fields = [
     { label: 'Email', value: client.email },
@@ -56,7 +77,12 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
               {(client.first_name?.[0] || '') + (client.last_name?.[0] || '')}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">{client.first_name} {client.last_name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold text-slate-900">{client.first_name} {client.last_name}</h1>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${score.bg} ${score.color}`}>
+                  {score.emoji} {score.label} · {score.score}
+                </span>
+              </div>
               <p className="text-slate-500 text-sm capitalize">{client.status} · {client.source}</p>
             </div>
           </div>

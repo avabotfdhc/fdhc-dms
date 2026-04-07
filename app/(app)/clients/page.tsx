@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { scoreLeadClient } from '@/lib/lead-score'
 
 interface SearchParams {
   search?: string
@@ -21,7 +22,7 @@ export default async function ClientsPage({
 
   let query = supabase
     .from('clients')
-    .select('id, first_name, last_name, email, phone, status, source, created_at', { count: 'exact' })
+    .select('id, first_name, last_name, email, phone, status, source, created_at, land_status, contact_attempts, tags, next_follow_up_at', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, from + pageSize - 1)
 
@@ -102,35 +103,50 @@ export default async function ClientsPage({
       {/* List */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="divide-y divide-slate-50">
-          {clients?.map(client => (
-            <Link
-              key={client.id}
-              href={`/clients/${client.id}`}
-              className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
-            >
-              <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-semibold text-sm flex-shrink-0">
-                {(client.first_name?.[0] || '') + (client.last_name?.[0] || '')}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-slate-900 text-sm">
-                  {client.first_name} {client.last_name}
-                </p>
-                <p className="text-xs text-slate-500 truncate">
-                  {client.email || client.phone || 'No contact info'}
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                {client.status && (
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusColors[client.status] || 'bg-slate-100 text-slate-600'}`}>
-                    {client.status}
+          {clients?.map(client => {
+            const score = scoreLeadClient({
+              status: client.status || '',
+              land_status: client.land_status,
+              source: client.source,
+              contact_attempts: client.contact_attempts || 0,
+              interactions: [],
+              created_at: client.created_at,
+              email: client.email,
+              phone: client.phone,
+              has_deal: false,
+              next_follow_up_at: client.next_follow_up_at,
+              tags: client.tags,
+            })
+            return (
+              <Link
+                key={client.id}
+                href={`/clients/${client.id}`}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
+              >
+                <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-semibold text-sm flex-shrink-0">
+                  {(client.first_name?.[0] || '') + (client.last_name?.[0] || '')}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-slate-900 text-sm">
+                    {client.first_name} {client.last_name}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">
+                    {client.email || client.phone || 'No contact info'}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${score.bg} ${score.color}`}>
+                    {score.emoji} {score.score}
                   </span>
-                )}
-                {client.source && (
-                  <span className="text-xs text-slate-400">{client.source}</span>
-                )}
-              </div>
-            </Link>
-          ))}
+                  {client.status && (
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusColors[client.status] || 'bg-slate-100 text-slate-600'}`}>
+                      {client.status}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            )
+          })}
           {(!clients || clients.length === 0) && (
             <p className="px-4 py-8 text-center text-slate-400 text-sm">No clients found</p>
           )}
